@@ -58,6 +58,7 @@ These features quantify a driver's recent history of gaining or losing positions
 -   **`race_loss`**: `max(predicted_classification_points - classification_points, 0)`. Represents how many points a driver lost during a race relative to their *predicted* points. A positive value means underperforming expectations.
 -   **`recent_gain_exposure`**: Rolling sum of `race_gain` over the last 3 races for a `DriverId` within a `season`, shifted by 1. Filled with 0 for initial races with no prior exposure.
 -   **`recent_loss_exposure`**: Rolling sum of `race_loss` over the last 3 races for a `DriverId` within a `season`, shifted by 1. Filled with 0 for initial races with no prior exposure.
+-- **`net_recent_deviation`**: Calculated as `recent_gain_exposure` - `recent_loss_exposure`.
 -   **`exposure_history_count`**: Number of races contributing to the `recent_gain_exposure` and `recent_loss_exposure` calculations (up to 3, adjusted for season boundaries and early career). Filled with 0 for initial races.
 
 -----------------------------------------------------------------
@@ -97,7 +98,7 @@ Two auxiliary predictive models were developed using `CatBoostRegressor` to gene
     -   The `predicted_qualifying_score` is a continuous value, while `predicted_qualifying_position` is an integer rank.
     -   Predictions are not generated for races before `PREDICT_START_YEAR` (2020) as these years are used for initial training and validation.
 
--   **Evaluation**: The model was evaluated using Mean Absolute Error (MAE), Spearman Rank Correlation, and Percentage of predictions within 3 positions. The CatBoost Regressor showed the lowest overall MAE (3.024) compared to simpler benchmarks, justifying its use.
+-   **Evaluation**: The model was evaluated using Mean Absolute Error (MAE), Spearman Rank Correlation, and Percentage of predictions within 3 positions. The **CatBoost Regressor** showed the lowest overall MAE (**3.024**) compared to simpler benchmarks, justifying its use.
 
 ### 2. Expected Classification Points Model
 
@@ -128,9 +129,9 @@ Two auxiliary predictive models were developed using `CatBoostRegressor` to gene
         -   These raw scores are then ranked within the race, and discrete `predicted_classification_points` (F1 points) are assigned based on the FIA 2025 points structure (25 for P1, 18 for P2, etc., down to 1 for P10). This ranking is performed *within each specific race*.
         -   **After predictions are made, the actual outcome of the current race is then added to the historical training data** for the subsequent iteration, allowing the model to continuously update its knowledge.
 
--   **Key Considerations**:
+-   **Key Considerations**: 
     -   `RMSE` was used as the loss function during training, with `MAE` monitored.
     -   Raw predictions were clipped to be between 0 and 25 points to reflect the physical bounds of points in F1.
     -   Predictions (both raw and discrete) retain `NaN` values where no prediction could be made (e.g., for races before the `PREDICT_START_YEAR`). This was a specific user request to represent missing data accurately, rather than filling with zeros.
 
--   **Evaluation**: The model was evaluated using MAE and RMSE. The `CatBoost Regressor (Discrete)` model achieved the best overall MAE (2.864), demonstrating superior performance over the benchmarks.
+-   **Evaluation**: The model was evaluated using MAE and RMSE. The **CatBoost Regressor (Discrete)** model achieved the best overall MAE (**2.844**), demonstrating superior performance over the benchmarks.
